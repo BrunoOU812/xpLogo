@@ -31,7 +31,7 @@ const scene = new THREE.Scene();
 const model = {
   speed: 0,
   scale: 0.05,
-  color: 0xaa99ff,
+  color: "#aa99ff",
 };
 /**
  * Textures
@@ -50,6 +50,7 @@ const spotLight = new THREE.SpotLight({ color: 0xffffff });
 spotLight.position.set(1, 1, 1);
 scene.add(spotLight);
 let group;
+let mesh;
 const material = new THREE.MeshStandardMaterial({
   color: model.color,
   side: THREE.FrontSide,
@@ -86,7 +87,7 @@ loader.load("/textures/SVG/xp2-01.svg", (data) => {
   };
   const extrude = new THREE.ExtrudeBufferGeometry(shapes, extrudeSettings);
   // const smoothedGeometry = modifier.modify(extrude);
-  const mesh = new THREE.Mesh(extrude, material);
+  mesh = new THREE.Mesh(extrude, material);
   group = new THREE.Group();
   group.add(mesh);
   scene.add(group);
@@ -142,6 +143,9 @@ gui.add(material, "roughness").min(0).max(1).step(0.0001);
 gui.add(material, "aoMapIntensity").min(0).max(3).step(0.01);
 gui.add(model, "speed").min(-10).max(10).step(0.01);
 gui.add(model, "scale").min(0.05).max(0.14).step(0.001);
+gui.addColor(model, "color").onChange(() => {
+  material.color.set(model.color);
+});
 /**
  * Renderer
  */
@@ -156,34 +160,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
  */
 const clock = new THREE.Clock();
 
-// // Inicializar GIF
-// const gif = new GIF({
-//   workers: 2,
-//   quality: 10,
-//   width: sizes.width,
-//   height: sizes.height,
-// });
-
-// // Loop para capturar frames
-// const captureFrame = (time) => {
-//   const elapsedTime = clock.getElapsedTime();
-
-//   // Renderizar frame
-//   renderer.render(scene, camera);
-
-//   // Agregar frame al GIF
-//   gif.addFrame(canvas, { delay: 16 });
-
-//   // Detener captura de frames después de cierto tiempo
-//   if (elapsedTime > time) {
-//     gif.render();
-//   } else {
-//     requestAnimationFrame(captureFrame.bind(null, time));
-//   }
-// };
-
-// // Iniciar captura de frames
-// captureFrame(5); // Capturar frames por 5 segundos
+// En el bucle de renderizado
+// const elapsedTime = clock.getElapsedTime();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
@@ -191,6 +169,7 @@ const tick = () => {
   if (group) {
     group.rotation.y = elapsedTime * model.speed;
     group.scale.set(model.scale, model.scale, model.scale);
+    // group.children[0].material.color = model.color;
   }
   // Update controls
   controls.update();
