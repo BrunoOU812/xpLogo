@@ -7,7 +7,14 @@ import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 // import { SubdivisionModifier } from "three-subdivision-modifier";
 
 import GIF from "gif.js";
-
+const model = {
+  speed: 0,
+  scale: 0.05,
+  // material: standardMaterial,
+  color: "#aa99ff",
+  break: 0,
+  fov: 50,
+};
 /**
  * Base
  */
@@ -28,12 +35,7 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
-const model = {
-  speed: 0,
-  scale: 0.05,
-  color: "#aa99ff",
-  break: 0,
-};
+
 /**
  * Textures
  */
@@ -55,15 +57,21 @@ let mesh;
 let geometry;
 let morphTargets;
 let vertexesPosition;
-const material = new THREE.MeshStandardMaterial({
+const standardMaterial = new THREE.MeshStandardMaterial({
   color: model.color,
   side: THREE.FrontSide,
   envMap: environmentMapTexture,
   // depthWrite: false,
 });
-material.metalness = 0.2;
-material.roughness = 0.2;
+const basicMaterial = new THREE.MeshBasicMaterial({
+  color: model.color,
+  side: THREE.FrontSide,
+});
+const normalMaterial = new THREE.MeshNormalMaterial({});
+standardMaterial.metalness = 0.2;
+standardMaterial.roughness = 0.2;
 // const modifier = new THREE.SubdivisionModifier(2);
+
 loader.load("/textures/SVG/xp2-01.svg", (data) => {
   const paths = data.paths;
 
@@ -89,21 +97,22 @@ loader.load("/textures/SVG/xp2-01.svg", (data) => {
     // bevelOffset: -5,
     // bevelSegments: 1,
   };
-  const extrude = new THREE.ExtrudeBufferGeometry(shapes, extrudeSettings);
+  const extrude = new THREE.ExtrudeGeometry(shapes, extrudeSettings);
   geometry = extrude.attributes.position;
 
   vertexesPosition = extrude.attributes.position.clone();
   console.log(vertexesPosition);
 
   // const smoothedGeometry = modifier.modify(extrude);
-  mesh = new THREE.Mesh(extrude, material);
+  mesh = new THREE.Mesh(extrude, standardMaterial);
   group = new THREE.Group();
   group.add(mesh);
   scene.add(group);
   mesh.scale.set(model.scale, model.scale, model.scale);
   const bbox = new THREE.Box3().setFromObject(mesh);
-  const width = -bbox.getSize().x / 2;
-  const height = bbox.getSize().y / 2;
+  const size = new THREE.Vector3();
+  const width = -bbox.getSize(size).x / 2;
+  const height = bbox.getSize(size).y / 2;
   mesh.rotation.x = Math.PI;
   mesh.position.x = width;
   mesh.position.y = height;
@@ -147,11 +156,11 @@ scene.add(camera);
 // Controls
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
-gui.add(material, "metalness").min(0).max(1).step(0.0001);
-gui.add(material, "roughness").min(0).max(1).step(0.0001);
-gui.add(material, "aoMapIntensity").min(0).max(3).step(0.01);
+gui.add(standardMaterial, "metalness").min(0).max(1).step(0.0001);
+gui.add(standardMaterial, "roughness").min(0).max(1).step(0.0001);
+// gui.add(standardMaterial, "aoMapIntensity").min(0).max(3).step(0.01);
 gui.add(model, "speed").min(-10).max(10).step(0.01);
-gui.add(model, "scale").min(0.05).max(0.14).step(0.001);
+gui.add(model, "scale").min(0.001).max(10).step(0.001);
 gui
   .add(model, "break")
   .min(0)
@@ -161,6 +170,43 @@ gui
 gui.addColor(model, "color").onChange(() => {
   material.color.set(model.color);
 });
+gui
+  .add(
+    {
+      resetCamera: function () {
+        camera.position.set(0, 0, 3);
+        camera.lookAt(0, 0, 0);
+      },
+    },
+    "resetCamera"
+  )
+  .name("Reset Camera");
+
+gui
+  .add(model, "fov")
+  .min(1)
+  .max(179)
+  .step(1)
+  .onFinishChange(() => camera.updateProjectionMatrix());
+// const materialOptions = {
+//   Option1: false,
+//   Option2: false,
+//   Option3: false,
+// };
+// gui.add(materialOptions, "Option1");
+// gui.add(materialOptions, "Option2");
+// gui.add(materialOptions, "Option3");
+const materialList = {
+  Basic: basicMaterial,
+  Standard: standardMaterial,
+  Normal: normalMaterial,
+};
+gui
+  .add({ material: "Standard" }, "material", Object.keys(materialList))
+  .onChange((value) => {
+    mesh.material = materialList[value];
+    geometry.needsUpdate = true;
+  });
 /**
  * Renderer
  */
@@ -193,6 +239,7 @@ const tick = () => {
         vertexesPosition.getZ(i) + Math.random() * model.break - 0.1
       );
     }
+    camera.fov = model.fov;
   }
   // Update controls
   controls.update();
