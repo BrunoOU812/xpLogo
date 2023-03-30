@@ -170,7 +170,8 @@ gui
   .step(1)
   .onChange(() => (geometry.needsUpdate = true));
 gui.addColor(model, "color").onChange(() => {
-  material.color.set(model.color);
+  standardMaterial.color.set(model.color);
+  basicMaterial.color.set(model.color);
 });
 gui.addColor(model, "background").onChange(() => {
   scene.background.set(model.background);
