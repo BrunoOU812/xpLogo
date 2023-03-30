@@ -168,7 +168,7 @@ gui
   .min(0)
   .max(100)
   .step(1)
-  .onFinishChange(() => (geometry.needsUpdate = true));
+  .onChange(() => (geometry.needsUpdate = true));
 gui.addColor(model, "color").onChange(() => {
   material.color.set(model.color);
 });
