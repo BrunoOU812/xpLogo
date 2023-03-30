@@ -32,6 +32,7 @@ const model = {
   speed: 0,
   scale: 0.05,
   color: "#aa99ff",
+  break: 0,
 };
 /**
  * Textures
@@ -51,6 +52,9 @@ spotLight.position.set(1, 1, 1);
 scene.add(spotLight);
 let group;
 let mesh;
+let geometry;
+let morphTargets;
+let vertexesPosition;
 const material = new THREE.MeshStandardMaterial({
   color: model.color,
   side: THREE.FrontSide,
@@ -86,6 +90,11 @@ loader.load("/textures/SVG/xp2-01.svg", (data) => {
     // bevelSegments: 1,
   };
   const extrude = new THREE.ExtrudeBufferGeometry(shapes, extrudeSettings);
+  geometry = extrude.attributes.position;
+
+  vertexesPosition = extrude.attributes.position.clone();
+  console.log(vertexesPosition);
+
   // const smoothedGeometry = modifier.modify(extrude);
   mesh = new THREE.Mesh(extrude, material);
   group = new THREE.Group();
@@ -143,6 +152,12 @@ gui.add(material, "roughness").min(0).max(1).step(0.0001);
 gui.add(material, "aoMapIntensity").min(0).max(3).step(0.01);
 gui.add(model, "speed").min(-10).max(10).step(0.01);
 gui.add(model, "scale").min(0.05).max(0.14).step(0.001);
+gui
+  .add(model, "break")
+  .min(0)
+  .max(100)
+  .step(1)
+  .onFinishChange(() => (geometry.needsUpdate = true));
 gui.addColor(model, "color").onChange(() => {
   material.color.set(model.color);
 });
@@ -170,6 +185,14 @@ const tick = () => {
     group.rotation.y = elapsedTime * model.speed;
     group.scale.set(model.scale, model.scale, model.scale);
     // group.children[0].material.color = model.color;
+    for (let i = 0; i < vertexesPosition.count; i++) {
+      geometry.setXYZ(
+        i,
+        vertexesPosition.getX(i) + Math.random() * model.break - 0.1,
+        vertexesPosition.getY(i) + Math.random() * model.break - 0.1,
+        vertexesPosition.getZ(i) + Math.random() * model.break - 0.1
+      );
+    }
   }
   // Update controls
   controls.update();
