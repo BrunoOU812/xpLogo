@@ -10,8 +10,8 @@ import GIF from "gif.js";
 const model = {
   speed: 0,
   scale: 0.05,
-  // material: standardMaterial,
   color: "#aa99ff",
+  background: "#000000",
   break: 0,
   fov: 50,
 };
@@ -35,7 +35,7 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
-
+scene.background = new THREE.Color(model.background);
 /**
  * Textures
  */
@@ -68,6 +68,9 @@ const basicMaterial = new THREE.MeshBasicMaterial({
   side: THREE.FrontSide,
 });
 const normalMaterial = new THREE.MeshNormalMaterial({});
+// const depthMaterial = new THREE.MeshDepthMaterial({});
+// depthMaterial.depthPacking = THREE.RGBADepthPacking;
+// depthMaterial.color = new THREE.Color(model.color);
 standardMaterial.metalness = 0.2;
 standardMaterial.roughness = 0.2;
 // const modifier = new THREE.SubdivisionModifier(2);
@@ -158,7 +161,6 @@ const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 gui.add(standardMaterial, "metalness").min(0).max(1).step(0.0001);
 gui.add(standardMaterial, "roughness").min(0).max(1).step(0.0001);
-// gui.add(standardMaterial, "aoMapIntensity").min(0).max(3).step(0.01);
 gui.add(model, "speed").min(-10).max(10).step(0.01);
 gui.add(model, "scale").min(0.001).max(10).step(0.001);
 gui
@@ -169,6 +171,9 @@ gui
   .onFinishChange(() => (geometry.needsUpdate = true));
 gui.addColor(model, "color").onChange(() => {
   material.color.set(model.color);
+});
+gui.addColor(model, "background").onChange(() => {
+  scene.background.set(model.background);
 });
 gui
   .add(
@@ -200,6 +205,7 @@ const materialList = {
   Basic: basicMaterial,
   Standard: standardMaterial,
   Normal: normalMaterial,
+  // Depth: depthMaterial,
 };
 gui
   .add({ material: "Standard" }, "material", Object.keys(materialList))
@@ -219,10 +225,21 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * Animate
  */
-const clock = new THREE.Clock();
+// const morphTargets = new THREE.BufferGeometryMorphTarget();
+// morphTargets.addTarget(geometry); // añadir el geometry original como target base
+// morphTargets.addTarget(geometry.clone()); // añadir el nuevo target de morphing
 
-// En el bucle de renderizado
-// const elapsedTime = clock.getElapsedTime();
+// const mesh = new THREE.Mesh(geometry, material);
+// mesh.morphTargetInfluences[0] = 1; // influencia inicial en el target base
+// mesh.morphTargetInfluences[1] = 0; // influencia inicial en el nuevo target de morphing
+
+// ...
+
+// // actualizar la influencia de morphing en cada frame
+// mesh.morphTargetInfluences[0] = 1 - Math.abs(Math.sin(time * 2));
+// mesh.morphTargetInfluences[1] = Math.abs(Math.sin(time * 2));
+
+const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
@@ -234,9 +251,9 @@ const tick = () => {
     for (let i = 0; i < vertexesPosition.count; i++) {
       geometry.setXYZ(
         i,
-        vertexesPosition.getX(i) + Math.random() * model.break - 0.1,
-        vertexesPosition.getY(i) + Math.random() * model.break - 0.1,
-        vertexesPosition.getZ(i) + Math.random() * model.break - 0.1
+        vertexesPosition.getX(i) + (Math.random() - 0.5) * model.break,
+        vertexesPosition.getY(i) + (Math.random() - 0.5) * model.break,
+        vertexesPosition.getZ(i) + (Math.random() - 0.5) * model.break
       );
     }
     camera.fov = model.fov;
