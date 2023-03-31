@@ -13,6 +13,7 @@ const model = {
   color: "#aa99ff",
   background: "#000000",
   break: 0,
+  animateBreak: false,
   fov: 50,
 };
 /**
@@ -166,9 +167,20 @@ gui.add(model, "scale").min(0.001).max(10).step(0.001);
 gui
   .add(model, "break")
   .min(0)
-  .max(100)
+  .max(1000)
   .step(1)
   .onChange(() => (geometry.needsUpdate = true));
+const materialOptions = {
+  Option1: model.animateBreak,
+  //   Option2: false,
+  // Option3: false,
+};
+gui
+  .add(materialOptions, "Option1")
+  .name("animate break")
+  .onChange(() => (model.animateBreak = !model.animateBreak));
+// gui.add(materialOptions, "Option2");
+// gui.add(materialOptions, "Option3");
 gui.addColor(model, "color").onChange(() => {
   standardMaterial.color.set(model.color);
   basicMaterial.color.set(model.color);
@@ -194,14 +206,7 @@ gui
   .max(179)
   .step(1)
   .onFinishChange(() => camera.updateProjectionMatrix());
-// const materialOptions = {
-//   Option1: false,
-//   Option2: false,
-//   Option3: false,
-// };
-// gui.add(materialOptions, "Option1");
-// gui.add(materialOptions, "Option2");
-// gui.add(materialOptions, "Option3");
+
 const materialList = {
   Basic: basicMaterial,
   Standard: standardMaterial,
@@ -252,13 +257,18 @@ const tick = () => {
     for (let i = 0; i < vertexesPosition.count; i++) {
       geometry.setXYZ(
         i,
-        vertexesPosition.getX(i) + (Math.random() - 0.5) * model.break,
-        vertexesPosition.getY(i) + (Math.random() - 0.5) * model.break,
-        vertexesPosition.getZ(i) + (Math.random() - 0.5) * model.break
+        vertexesPosition.getX(i) +
+          (Math.random() - 0.5) * (model.break * Math.sin(elapsedTime)),
+        vertexesPosition.getY(i) +
+          (Math.random() - 0.5) * (model.break * Math.sin(elapsedTime)),
+        vertexesPosition.getZ(i) +
+          (Math.random() - 0.5) * (model.break * Math.sin(elapsedTime))
       );
     }
     camera.fov = model.fov;
+    geometry.needsUpdate = model.animateBreak;
   }
+
   // Update controls
   controls.update();
 
