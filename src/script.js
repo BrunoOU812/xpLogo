@@ -11,6 +11,7 @@ const model = {
   speed: 0,
   scale: 0.05,
   color: "#aa99ff",
+  wireframe: false,
   background: "#000000",
   break: 0,
   animateBreak: false,
@@ -62,13 +63,25 @@ const standardMaterial = new THREE.MeshStandardMaterial({
   color: model.color,
   side: THREE.FrontSide,
   envMap: environmentMapTexture,
+  wireframe: model.wireframe,
   // depthWrite: false,
 });
 const basicMaterial = new THREE.MeshBasicMaterial({
   color: model.color,
   side: THREE.FrontSide,
+  wireframe: model.wireframe,
 });
-const normalMaterial = new THREE.MeshNormalMaterial({});
+const metalMaterial = new THREE.MeshBasicMaterial({
+  color: model.color,
+  side: THREE.FrontSide,
+  envMap: environmentMapTexture,
+  wireframe: model.wireframe,
+});
+metalMaterial.metalness = 0.2;
+metalMaterial.roughness = 0.2;
+const normalMaterial = new THREE.MeshNormalMaterial({
+  wireframe: model.wireframe,
+});
 // const depthMaterial = new THREE.MeshDepthMaterial({});
 // depthMaterial.depthPacking = THREE.RGBADepthPacking;
 // depthMaterial.color = new THREE.Color(model.color);
@@ -175,10 +188,18 @@ const materialOptions = {
   //   Option2: false,
   // Option3: false,
 };
+const options = {
+  Random: "Random",
+  Break: "option2",
+  LowPoly: "option3",
+};
+const selectedOption = "Random";
+gui.add({ type: selectedOption }, "type", options);
 gui
   .add(materialOptions, "Option1")
   .name("animate break")
   .onChange(() => (model.animateBreak = !model.animateBreak));
+
 // gui.add(materialOptions, "Option2");
 // gui.add(materialOptions, "Option3");
 gui.addColor(model, "color").onChange(() => {
@@ -211,8 +232,18 @@ const materialList = {
   Basic: basicMaterial,
   Standard: standardMaterial,
   Normal: normalMaterial,
+  Metal: metalMaterial,
   // Depth: depthMaterial,
 };
+const wireframeMaterial = {
+  wireframe: model.wireframe,
+  //   Option2: false,
+  // Option3: false,
+};
+gui.add(wireframeMaterial, "wireframe").onChange(() => {
+  model.wireframe = !model.wireframe;
+});
+
 gui
   .add({ material: "Standard" }, "material", Object.keys(materialList))
   .onChange((value) => {
@@ -267,6 +298,7 @@ const tick = () => {
     }
     camera.fov = model.fov;
     geometry.needsUpdate = model.animateBreak;
+    mesh.material.wireframe = model.wireframe;
   }
 
   // Update controls
