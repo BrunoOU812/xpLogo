@@ -5,6 +5,7 @@ import * as dat from "dat.gui";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 // import { SubdivisionModifier } from "three/examples/js/modifiers/SubdivisionModifier.js";
 // import { SubdivisionModifier } from "three-subdivision-modifier";
+import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 import GIF from "gif.js";
 const model = {
@@ -15,6 +16,7 @@ const model = {
   background: "#000000",
   break: 0,
   animateBreak: false,
+  animationSpeed: 1,
   fov: 50,
 };
 /**
@@ -57,7 +59,8 @@ scene.add(spotLight);
 let group;
 let mesh;
 let geometry;
-let morphTargets;
+let weldedGeometry;
+let extrude;
 let vertexesPosition;
 const standardMaterial = new THREE.MeshStandardMaterial({
   color: model.color,
@@ -89,6 +92,9 @@ standardMaterial.metalness = 0.2;
 standardMaterial.roughness = 0.2;
 // const modifier = new THREE.SubdivisionModifier(2);
 
+/**
+ * Loading SVG
+ */
 loader.load("/textures/SVG/xp2-01.svg", (data) => {
   const paths = data.paths;
 
@@ -114,12 +120,14 @@ loader.load("/textures/SVG/xp2-01.svg", (data) => {
     // bevelOffset: -5,
     // bevelSegments: 1,
   };
-  const extrude = new THREE.ExtrudeGeometry(shapes, extrudeSettings);
-  geometry = extrude.attributes.position;
+  extrude = new THREE.ExtrudeGeometry(shapes, extrudeSettings);
+  // weldedGeometry = geometry.clone();
+  // const tolerance = 0.001;
+  // THREE.BufferGeometryUtils.mergeVertices(weldedGeometry, tolerance);
 
   vertexesPosition = extrude.attributes.position.clone();
-  console.log(vertexesPosition);
-
+  // const mergedVertex = BufferGeometryUtils.mergeVertices(vertexesPosition);
+  // console.log(mergedVertex);
   // const smoothedGeometry = modifier.modify(extrude);
   mesh = new THREE.Mesh(extrude, standardMaterial);
   group = new THREE.Group();
@@ -194,12 +202,13 @@ const options = {
   LowPoly: "option3",
 };
 const selectedOption = "Random";
-gui.add({ type: selectedOption }, "type", options);
+// gui.add({ type: selectedOption }, "type", options);
 gui
   .add(materialOptions, "Option1")
   .name("animate break")
   .onChange(() => (model.animateBreak = !model.animateBreak));
 
+gui.add(model, "animationSpeed").min(-10).max(10).step(1);
 // gui.add(materialOptions, "Option2");
 // gui.add(materialOptions, "Option3");
 gui.addColor(model, "color").onChange(() => {
@@ -226,7 +235,7 @@ gui
   .min(1)
   .max(179)
   .step(1)
-  .onFinishChange(() => camera.updateProjectionMatrix());
+  .onChange(() => camera.updateProjectionMatrix());
 
 const materialList = {
   Basic: basicMaterial,
@@ -280,8 +289,11 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
   // Model Rotation
   if (group) {
+    geometry = extrude.attributes.position;
+
     group.rotation.y = elapsedTime * model.speed;
     group.scale.set(model.scale, model.scale, model.scale);
     // group.children[0].material.color = model.color;
@@ -289,11 +301,14 @@ const tick = () => {
       geometry.setXYZ(
         i,
         vertexesPosition.getX(i) +
-          (Math.random() - 0.5) * (model.break * Math.sin(elapsedTime)),
+          (Math.random() - 0.5) *
+            (model.break * Math.sin(elapsedTime * model.animationSpeed)),
         vertexesPosition.getY(i) +
-          (Math.random() - 0.5) * (model.break * Math.sin(elapsedTime)),
+          (Math.random() - 0.5) *
+            (model.break * Math.sin(elapsedTime * model.animationSpeed)),
         vertexesPosition.getZ(i) +
-          (Math.random() - 0.5) * (model.break * Math.sin(elapsedTime))
+          (Math.random() - 0.5) *
+            (model.break * Math.sin(elapsedTime * model.animationSpeed))
       );
     }
     camera.fov = model.fov;
